@@ -2,13 +2,13 @@
 
 # Check if a project name was provided
 if [ -z "$1" ]; then
-  echo "Usage: $0 <project_name>"
+  echo "Usage: ${0} <project_name>"
   exit 1
 fi
 
 # Variables
 PROJECT_NAME=$1
-BASE_DIR=$(pwd)/$PROJECT_NAME
+BASE_DIR=$(pwd)/"$PROJECT_NAME"
 
 # Create directory structure
 echo "Creating project structure..."
@@ -27,7 +27,7 @@ test:
 
 clean:
 \t@echo "Cleaning up..."
-\t@rm -rf $BASE_DIR/#temp/*
+\t@rm -rf "$BASE_DIR"/#temp/*
 EOF
 
 # Create the setup.env file in the .config directory
@@ -91,6 +91,42 @@ case "\$1" in
 esac
 EOF
 chmod +x "$BASE_DIR/run"
+
+# Initialize Git repository
+echo "Initializing Git repository..."
+cd "$BASE_DIR"
+git init
+cat <<EOF > .gitignore
+#temp/
+_private/
+EOF
+git add .
+git commit -m "Initial commit"
+
+# Optional: Set up Docker
+echo "Setting up Docker (optional)..."
+cat <<EOF > "$BASE_DIR/Dockerfile"
+# Use an official Node runtime as a parent image
+FROM node:14
+
+# Set the working directory in the container
+WORKDIR /usr/src/app
+
+# Copy the current directory contents into the container at /usr/src/app
+COPY . .
+
+# Install any needed packages specified in requirements.txt
+RUN npm install
+
+# Make port 4000 available to the world outside this container
+EXPOSE 4000
+
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["node", "src/main.js"]
+EOF
 
 echo "Project '$PROJECT_NAME' created successfully."
 echo "Navigate to the project directory with: cd $PROJECT_NAME"
